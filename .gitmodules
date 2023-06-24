@@ -1,0 +1,6 @@
+[submodule "Assets/Utils"]
+	path = Assets/Utils
+	url = git@github.com:linemouth/Utils.git
+[submodule "Assets/Utils.Unity"]
+	path = Assets/Utils.Unity
+	url = git@github.com:linemouth/Utils.Unity.git
