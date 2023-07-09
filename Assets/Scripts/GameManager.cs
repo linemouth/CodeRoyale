@@ -46,6 +46,7 @@ public class GameManager : EntityComponent
     private static readonly HashSet<Bounds> GridCells = GetGridCells();
     private static readonly HashSet<Powerup> powerups = new HashSet<Powerup>();
     private const float gridSize = 30;
+    private ActionCamera actionCamera = null;
 
     public static IEnumerable<TargetInformation> GetRadarPings(Boat boat, float headingMin, float headingMax)
     {
@@ -224,6 +225,10 @@ public class GameManager : EntityComponent
         }
         boat.Controller = (BoatController)Activator.CreateInstance(type);
         boat.Destroyed += BoatDestroyed;
+        if(type == typeof(ProBoat))
+        {
+            actionCamera.Subject = boat;
+        }
         Boats.Add(boat);
         return boat;
     }
@@ -257,8 +262,9 @@ public class GameManager : EntityComponent
         BoatPrefab = Resources.Load<GameObject>("Prefabs/Gunboat");
         ProjectilePrefab = Resources.Load<GameObject>("Prefabs/Projectile");
         PowerupPrefab = Resources.Load<GameObject>("Prefabs/Powerup Crate");
+        actionCamera = Camera.main.GetComponent<ActionCamera>();
 
-        foreach((Type type, BoatControllerStats stats) in BoatControllers)
+        /*foreach((Type type, BoatControllerStats stats) in BoatControllers)
         {
             AddBoat(type);
             StatGroup statGroup = stats.statGroup = new StatGroup(stats.Name);
@@ -268,12 +274,12 @@ public class GameManager : EntityComponent
             statGroup.Add(new StatLabel(() => $"Damage dealt: {stats.totalDamageDealtToBoats:0}, taken: {stats.totalDamageSustained:0}", "Damage"));
             statGroup.Add(new StatLabel(() => $"Shots/kill: {stats.AverageShotsPerKill:0.0}, powerups: {stats.AveragePowerupsCollected:0.0}", "Effectiveness"));
             StatBlock.Add(statGroup);
-        }
+        }*/
     }
     protected virtual void Start()
     {
-        StatBlock.Canvas = ScreenUI.Canvas;
-        StatBlock.transform.parent = ScreenUI.LeftSidebar.transform;
+        //StatBlock.Canvas = ScreenUI.Canvas;
+        //StatBlock.transform.parent = ScreenUI.LeftSidebar.transform;
     }
     protected virtual void Update()
     {

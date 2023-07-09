@@ -40,7 +40,7 @@ public class Boat : EntityComponent
 
     // Gun
     public Vector2 GunPosition => Geometry.ToPlanarPoint(turret.position, GameManager.basisVectors);
-    public float GunAzimuth => turret.localRotation.eulerAngles.y;
+    public float GunAzimuth => Mathf.Repeat(turret.localRotation.eulerAngles.y + 180, 360) - 180;
     public float GunHeading => BoatController.DirectionToHeading(new Vector2(turret.forward.x, turret.forward.z));
     public Vector2 GunForward => Geometry.ToPlanarPoint(turret.forward, GameManager.basisVectors).normalized;
     //public float GunElevation => turret.rotation.eulerAngles.x;
@@ -49,7 +49,7 @@ public class Boat : EntityComponent
 
     // Radar
     public Vector2 RadarPosition => Geometry.ToPlanarPoint(radar.position, GameManager.basisVectors);
-    public float RadarAzimuth => radar.localRotation.eulerAngles.y;
+    public float RadarAzimuth => Mathf.Repeat(radar.localRotation.eulerAngles.y + 180, 360) - 180;
     public float RadarHeading => BoatController.DirectionToHeading(new Vector2(radar.forward.x, radar.forward.z));
     public Vector2 RadarForward => Geometry.ToPlanarPoint(radar.forward, GameManager.basisVectors).normalized;
     public float RadarRange => Math.Clamp(36000 / Mathf.Max(1, Mathf.Abs(radarAngularVelocity)), 25, 2500); // Radar range is [25m, 2.5km]
@@ -63,14 +63,14 @@ public class Boat : EntityComponent
     private bool rudderSteering = true;
     private Vector2 thrust = Vector2.zero;
     private Vector2 lastPosition = Vector2.zero;
-    private const float maxTorque = 30000; // Nm
-    private const float maxForwardThrust = 30000; // N
-    private const float maxReverseThrust = 15000; // N
-    private const float maxLateralThrust = 5000; // N
+    private const float maxTorque = 60000; // Nm
+    private const float maxForwardThrust = 80000; // N
+    private const float maxReverseThrust = 40000; // N
+    private const float maxLateralThrust = 20000; // N
     private float gunAzimuthVelocity = 0;
     //private float gunElevationVelocity = 0;
     private double nextFireTime = 0;
-    private float radarAzimuth = 120;
+    private float radarAzimuth = 0;
     private bool radarRelative = false;
     private float radarAngularVelocity = 0;
     private bool spinRadarContinuously = true;
@@ -86,7 +86,10 @@ public class Boat : EntityComponent
         rudderSteering = true;
     }
     public void SetThrust(float forward, float right) => thrust = new Vector2(right, forward);
-    public void SetGunAzimuth(float azimuth) => gunAzimuth = Mathf.Clamp(azimuth, -140, 140);
+    public void SetGunAzimuth(float azimuth)
+    {
+        gunAzimuth = Mathf.Clamp(azimuth, -140, 140);
+    }
     //public void SetGunElevation(float angle) => gunElevation = Mathf.Clamp(angle, -10, 45);
     public bool Fire(float energy)
     {
@@ -149,15 +152,13 @@ public class Boat : EntityComponent
         rigidbody.mass = 1000;
         StatBlock.Add(new StatBar(() => (float)energy.Fraction, new Color(0, 0.5f, 1), Color.black, new Vector2(50, 2), "Energy"));
         StatBlock.Add(new StatBar(() => (float)health.Fraction, new Color(0, 1, 0),    Color.black, new Vector2(50, 2), "Health"));
-
-        SetRadarRotationSpeed(60);
     }
     protected void Start()
     {
-        StatBlock.Canvas = ScreenUI.Canvas;
+        //StatBlock.Canvas = ScreenUI.Canvas;
         lastPosition = Position;
     }
-    protected void Update()
+    protected void FixedUpdate()
     {
         // Thrust
         float forwardThrust = thrust.y * (thrust.y >= 0 ? maxForwardThrust : maxReverseThrust);
@@ -172,7 +173,7 @@ public class Boat : EntityComponent
         );
 
         // Steering
-        if(!rudderSteering)
+        if (!rudderSteering)
         {
             rudder = Mathf.Clamp(0.1f * (Mathf.Repeat(Mathf.DeltaAngle(Heading, heading) + 180, 360) - 180), -1, 1);
         }
@@ -201,7 +202,7 @@ public class Boat : EntityComponent
         {
             float radarHeadingMin = RadarHeading;
             Vector3 radarRotation = radar.localEulerAngles;
-            if(spinRadarContinuously)
+            if (spinRadarContinuously)
             {
                 float targetAngle = radarRotation.y + (radarAzimuth > 0 ? 179 : -179);
                 radarRotation.y = Mathf.SmoothDampAngle(radarRotation.y, targetAngle, ref radarAngularVelocity, radarAzimuthSmoothTime, Mathf.Min(Math.Abs(radarMaxAngularVelocity), Mathf.Abs(radarAzimuth)), Time.deltaTime);
@@ -213,19 +214,21 @@ public class Boat : EntityComponent
             }
             radar.localEulerAngles = radarRotation;
             float radarHeadingMax = RadarHeading;
-            if(radarAngularVelocity < 0)
+            if (radarAngularVelocity < 0)
             {
                 // Swap to maintain order.
                 float temp = radarHeadingMin;
                 radarHeadingMin = radarHeadingMax;
                 radarHeadingMax = temp;
             }
-            foreach(TargetInformation target in GameManager.GetRadarPings(this, radarHeadingMin, radarHeadingMax))
+            foreach (TargetInformation target in GameManager.GetRadarPings(this, radarHeadingMin, radarHeadingMax))
             {
                 Controller?.OnRadarHit(target);
             }
         }
-
+    }
+    private void Update()
+    {
         Controller?.Update();
     }
     protected void OnDestroy()

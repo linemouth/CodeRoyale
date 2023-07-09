@@ -40,6 +40,12 @@ public abstract class BoatController
         float radians = heading * Mathf.Deg2Rad;
         return new Vector2(Mathf.Sin(radians), Mathf.Cos(radians));
     }
+    public Vector2 WorldToLocalPosition(Vector2 relativePosition)
+    {
+        Vector3 relativePosition3D = new Vector3(relativePosition.x, 0, relativePosition.y);
+        Vector3 localPosition3D = Boat.transform.worldToLocalMatrix * relativePosition;
+        return new Vector2(localPosition3D.x, localPosition3D.z);
+    }
     public float DirectionToAzimuth(Vector2 direction) => Mathf.Repeat(Mathf.Atan2(direction.x, direction.y) * Mathf.Rad2Deg - Heading + 180, 360) - 180;
     public virtual void OnRadarHit(TargetInformation target) { }
     public virtual void Start() { }
@@ -60,9 +66,9 @@ public abstract class BoatController
     protected void SetRadarHeading(float heading) => Boat.SetRadarHeading(heading);
 
     // Debug Tools
-    protected void DrawX(Vector2 position, Color color)
+    protected void DrawX(Vector2 position, Color color, bool localCoordinates = false)
     {
-        Vector3 p = Geometry.FromPlanarPoint(position, GameManager.basisVectors);
+        Vector3 p = localCoordinates ? Vector3.zero : Geometry.FromPlanarPoint(position, GameManager.basisVectors);
         Debug.DrawLine(p + new Vector3(-5, 0, -5), p + new Vector3(5, 0, 5), Color.red);
         Debug.DrawLine(p + new Vector3(-5, 0, 5), p + new Vector3(5, 0, -5), Color.red);
     }

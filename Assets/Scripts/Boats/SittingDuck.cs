@@ -5,8 +5,4 @@ using UnityEngine;
 public class SittingDuck : BoatController
 {
     // Does nothing
-    public override void Start()
-    {
-        SetRadarAzimuth(0);
-    }
 }
