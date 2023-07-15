@@ -589,10 +589,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1226393441}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a6a94f318fe086c45a0ba1efd38b90fa, type: 3}
+  m_Script: {fileID: 11500000, guid: 99b055d2e26a674458f6547808890949, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  size: {x: 120, y: 120}
+  size: {x: 200, y: 200}
   resolution: 0.5
   cellCount: 255
   material: {fileID: 2100000, guid: a496c5c67e112a84287523f6fc27b03e, type: 2}

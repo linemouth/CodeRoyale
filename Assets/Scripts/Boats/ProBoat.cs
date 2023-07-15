@@ -30,7 +30,7 @@ public class ProBoat : BoatController
                 targets.Remove(target);
             }
             targets.Add(target);
-            Debug.Log($"ProBoat sees {target.Name}");
+            //Debug.Log($"ProBoat sees {target.Name}");
         }
     }
     public override void Start()
@@ -64,20 +64,27 @@ public class ProBoat : BoatController
                     // Then get the closest one
                     .FirstOrDefault();
 
-                // Aim at the target
-                float gunAzimuth = DirectionToAzimuth(target.EstimatedPosition - Position);
-                SetGunAzimuth(gunAzimuth);
+                if (target.IsValid)
+                {
+                    // Aim at the target.
+                    float gunAzimuth = DirectionToAzimuth(target.EstimatedPosition - Position);
+                    SetGunAzimuth(gunAzimuth);
 
-                // Turn to face the target
+                    // Shoot furiously!
+                    Fire(0.5f);
+                }
+                else
+                {
+                    target = new TargetInformation("Origin", "Location", null, Vector2.zero, Vector2.zero, -1);
+                }
+
+                // Turn to face the target.
                 float targetHeading = DirectionToHeading(target.EstimatedPosition - Position);
                 SetHeading(targetHeading);
 
-                // Drive towards the target
+                // Drive towards the target until you're 25 meters from it.
                 Vector2 localRelativePosition = WorldToLocalPosition(target.EstimatedPosition);
-                SetThrust(localRelativePosition.x, localRelativePosition.y);
-
-                // Shoot furiously!
-                Fire(0);
+                SetThrust(localRelativePosition.y - 25, localRelativePosition.x);
 
                 break;
 
@@ -89,5 +96,10 @@ public class ProBoat : BoatController
                 // Search for health powerups.
                 break;
         }
+    }
+    public override void Update1()
+    {
+        // Clear stale target information.
+        targets = targets.Where(target => target.Age < 1.5f).ToHashSet();
     }
 }

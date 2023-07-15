@@ -12,6 +12,7 @@ public class HunterBoat : BoatController
     private HashSet<TargetInformation> ignoredTargets = new HashSet<TargetInformation>();
     private float lastSearchCompletedTime = 0;
     private float searchTimeRemaining = 1f;
+    private int burstFireRound = 0;
     
     protected class Mission
     {
@@ -222,12 +223,26 @@ public class HunterBoat : BoatController
         SetThrust(0.1f * Utils.Math.Deadzone(interceptDistance - approachDistance, 15), 0);
 
         // If the gun is aimed, take a shot.
-        bool gunAimed = Mathf.Abs(interceptHeading - GunHeading) < 1;
+        float angularErrorMargin = Utils.Math.SoftMin(30, 400 / interceptDistance, 30);
+        bool gunAimed = Mathf.Abs(interceptHeading - GunHeading) < angularErrorMargin;
         if(gunAimed)
         {
-            float aggression = Mathf.Pow(approachDistance * EnergyFraction / interceptDistance, 2);
-            //Fire(3 * aggression);
-            Fire(1);
+            // Fire a couple shots to intercept other projectiles.
+            if (burstFireRound < 2)
+            {
+                Fire(0);
+            }
+            else
+            {
+                float aggression = 3 * Mathf.Pow(approachDistance * EnergyFraction / interceptDistance, 2);
+                Fire(aggression);
+            }
+
+            burstFireRound++;
+            if(burstFireRound > 2)
+            {
+                burstFireRound = 0;
+            }
         }
     }
 }
