@@ -43,13 +43,14 @@ public abstract class BoatController
     public Vector2 WorldToLocalPosition(Vector2 relativePosition)
     {
         Vector3 relativePosition3D = new Vector3(relativePosition.x, 0, relativePosition.y);
-        Vector3 localPosition3D = Boat.transform.worldToLocalMatrix * relativePosition;
+        Vector3 localPosition3D = Boat.transform.InverseTransformPoint(relativePosition3D);
         return new Vector2(localPosition3D.x, localPosition3D.z);
     }
     public float DirectionToAzimuth(Vector2 direction) => Mathf.Repeat(Mathf.Atan2(direction.x, direction.y) * Mathf.Rad2Deg - Heading + 180, 360) - 180;
     public virtual void OnRadarHit(TargetInformation target) { }
     public virtual void Start() { }
     public virtual void Update() { }
+    public virtual void Update1() { }
     public virtual void FixedUpdate() { }
 
     protected void SetHeading(float heading) => Boat.SetHeading(heading);

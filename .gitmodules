@@ -4,3 +4,6 @@
 [submodule "Assets/Utils.Unity"]
 	path = Assets/Utils.Unity
 	url = git@github.com:linemouth/Utils.Unity.git
+[submodule "Assets/Graphics/Shaders/NoisyNodes"]
+	path = Assets/Graphics/Shaders/NoisyNodes
+	url = git@github.com:JimmyCushnie/Noisy-Nodes.git
