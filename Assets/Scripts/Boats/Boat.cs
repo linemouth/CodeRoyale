@@ -56,17 +56,19 @@ public class Boat : EntityComponent
     public const float radarMaxAngularVelocity = 360;
     public const float radarAzimuthSmoothTime = 0.05f;
 
+    // Internal
+    private double nextUpdate1 = 0;
     private StatBar energyBar;
-    private BoatController controller = null;
+    private BoatController controller = null; // The custom class used to control the Boat's behavior.
     private float heading = 0;
     private float rudder = 0;
     private bool rudderSteering = true;
     private Vector2 thrust = Vector2.zero;
     private Vector2 lastPosition = Vector2.zero;
-    private const float maxTorque = 60000; // Nm
-    private const float maxForwardThrust = 80000; // N
-    private const float maxReverseThrust = 40000; // N
-    private const float maxLateralThrust = 20000; // N
+    private const float maxTorque = 50000; // Nm
+    private const float maxForwardThrust = 40000; // N
+    private const float maxReverseThrust = 20000; // N
+    private const float maxLateralThrust = 10000; // N
     private float gunAzimuthVelocity = 0;
     //private float gunElevationVelocity = 0;
     private double nextFireTime = 0;
@@ -185,7 +187,7 @@ public class Boat : EntityComponent
             )
         );
 
-        // Distance Travelled
+        // Distance Traveled
         GameManager.RecordDistanceTravelled(this, (Position - lastPosition).magnitude);
         lastPosition = Position;
 
@@ -229,6 +231,13 @@ public class Boat : EntityComponent
     }
     private void Update()
     {
+        double time = Time.timeAsDouble;
+        if(time >= nextUpdate1)
+        {
+            nextUpdate1 = (time - nextUpdate1 < 1.5 ? nextUpdate1 : time) + 1;
+            Controller?.Update1();
+        }
+		
         Controller?.Update();
     }
     protected void OnDestroy()
