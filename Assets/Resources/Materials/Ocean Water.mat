@@ -37,7 +37,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Amplitude: 0.5
+    - _Amplitude: 0.3
     - _Clarity: 15
     - _Depth_Fade_Distance: 10
     - _Foam_Cutoff: 0.7

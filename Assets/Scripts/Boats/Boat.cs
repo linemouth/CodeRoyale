@@ -152,6 +152,10 @@ public class Boat : EntityComponent
             Destroy(gameObject);
         }
     }
+    public void SelfDestruct()
+    {
+        Destroy(gameObject);
+    }
 
     protected override void Awake()
     {
@@ -268,5 +272,6 @@ public class Boat : EntityComponent
     protected void OnDestroy()
     {
         Destroyed?.Invoke(this);
+        Controller.OnDestroy();
     }
 }

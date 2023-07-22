@@ -4,5 +4,5 @@ using UnityEngine;
 
 public class SittingDuck : BoatController
 {
-    // Does nothing
+    // Does nothingz
 }

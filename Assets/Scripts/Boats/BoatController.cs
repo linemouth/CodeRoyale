@@ -97,6 +97,8 @@ public abstract class BoatController
     public virtual void Update1() { }
     /// <summary>Called every Physics loop update.</summary>
     public virtual void FixedUpdate() { }
+    /// <summary>Called when the boat is destroyed.</summary>
+    public virtual void OnDestroy() { }
 
     // Control functions: Use these to control your Boat.
     /// <summary>Adds something to the Boat's stat block.</summary>
@@ -122,6 +124,7 @@ public abstract class BoatController
     public void SetRadarAzimuth(float azimuth) => Boat.SetRadarAzimuth(azimuth);
     /// <summary>Sets the direction the radar will aim, relative to the world.</summary>
     public void SetRadarHeading(float heading) => Boat.SetRadarHeading(heading);
+    public void SelfDestruct() => Boat.SelfDestruct();
 
     // Debug Tools: You can use these to draw what your boat is doing.
 #if DEBUG

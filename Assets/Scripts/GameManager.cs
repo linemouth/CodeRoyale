@@ -47,6 +47,7 @@ public class GameManager : EntityComponent
     private static readonly HashSet<Powerup> powerups = new HashSet<Powerup>();
     private const float gridSize = 30;
     private ActionCamera actionCamera = null;
+    private InputManager inputManager = null;
 
     public static IEnumerable<TargetInformation> GetRadarPings(Boat boat, float headingMin, float headingMax)
     {
@@ -224,6 +225,13 @@ public class GameManager : EntityComponent
             boat = boatObject.AddComponent<Boat>();
         }
         boat.Controller = (BoatController)Activator.CreateInstance(type);
+        if(boat.Controller is PlayerBoat playerBoat)
+        {
+            playerBoat.controller = inputManager.GetController();
+            MeshRenderer renderer = boat.GetComponentInChildren<MeshRenderer>();
+            renderer.sharedMaterial = new Material(renderer.material);
+            renderer.sharedMaterial.color = playerBoat.controller.color;
+        }
         boat.Destroyed += BoatDestroyed;
         Boats.Add(boat);
 
@@ -247,7 +255,7 @@ public class GameManager : EntityComponent
     }
     private Powerup AddPowerup()
     {
-        string type = Powerup.Types.Random();
+        string type = new string[] { "Health", "Energy", "Energy", "Energy" }.Random();
         Vector3 position = GetSpawnPosition(12);
         return AddPowerup(type, position);
     }
@@ -271,6 +279,7 @@ public class GameManager : EntityComponent
         BoatPrefab = Resources.Load<GameObject>("Prefabs/Gunboat");
         PowerupPrefab = Resources.Load<GameObject>("Prefabs/Powerup Crate");
         actionCamera = Camera.main.GetComponent<ActionCamera>();
+        inputManager = gameObject.GetOrAddComponent<InputManager>();
 
         /*foreach((Type type, BoatControllerStats stats) in BoatControllers)
         {
