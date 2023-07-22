@@ -37,23 +37,29 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Amplitude: 1
-    - _Clarity: 1.6
+    - _Amplitude: 0.5
+    - _Clarity: 15
     - _Depth_Fade_Distance: 10
+    - _Foam_Cutoff: 0.7
+    - _Foam_Distance: 1
+    - _Foam_Strength: 0
     - _Frequency: 0.2
-    - _Octaves: 4
-    - _Perpendicular_Reflectivity: 0
+    - _Octaves: 3
+    - _Opacity: 0.04
+    - _Perpendicular_Reflectivity: 0.7
     - _Persistence: 0.3
     - _QueueControl: 0
     - _QueueOffset: 0
     - _Speed: 1
     - _Surface_Opacity: 0.25
-    - _Tangent_Reflectivity: 0
+    - _Tangent_Reflectivity: 0.9
     m_Colors:
     - _Normal_Color: {r: 0.25551796, g: 0.52304816, b: 0.5471698, a: 0}
     - _Perpendicular_Color: {r: 0.25618547, g: 0.5220941, b: 0.5377358, a: 0}
     - _Tangent_Color: {r: 0, g: 0.23975465, b: 0.5188679, a: 0}
-    - _Velocity1: {r: 1, g: 0.5, b: 1, a: 0}
+    - _Velocity1: {r: 1, g: 0.45, b: 1, a: 0}
+    - _Velocity2: {r: -1.3, g: 0.5, b: 0.3, a: 0}
+    - _Velocity3: {r: 0.3, g: 0.55, b: -1.3, a: 0}
   m_BuildTextureStacks: []
 --- !u!114 &1669021314936325464
 MonoBehaviour:
@@ -67,4 +73,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  version: 6
+  version: 7

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using Utils;
+using Utils.Unity;
 using Math = Utils.Math;
 using Color = UnityEngine.Color;
 
@@ -37,12 +38,11 @@ public class GameManager : EntityComponent
         public BoatControllerStats(Type type) => Type = type;
     }
     public static GameObject BoatPrefab;
-    public static GameObject ProjectilePrefab;
     public static GameObject PowerupPrefab;
     public static readonly Dictionary<Type, BoatControllerStats> BoatControllers = Assembly.GetExecutingAssembly().GetTypes().Where(type => type.IsSubclassOf(typeof(BoatController))).ToDictionary(type => type, type => new BoatControllerStats(type));
     public static readonly BasisVectors basisVectors = new BasisVectors(Vector3.up, Vector3.right, Vector3.forward);
 
-    private static HashSet<Boat> Boats = new HashSet<Boat>();
+    private static List<Boat> Boats = new List<Boat>();
     private static readonly HashSet<Bounds> GridCells = GetGridCells();
     private static readonly HashSet<Powerup> powerups = new HashSet<Powerup>();
     private const float gridSize = 30;
@@ -225,16 +225,25 @@ public class GameManager : EntityComponent
         }
         boat.Controller = (BoatController)Activator.CreateInstance(type);
         boat.Destroyed += BoatDestroyed;
-        if(type == typeof(ProBoat))
+        Boats.Add(boat);
+
+        // If the camera doesn't have a subject, make this boat the subject.
+        if(actionCamera.Subject == null)
         {
             actionCamera.Subject = boat;
         }
-        Boats.Add(boat);
+
         return boat;
     }
     private void BoatDestroyed(Boat boat)
     {
         Boats.Remove(boat);
+
+        // Update the camera subject
+        if(actionCamera.Subject == boat)
+        {
+            actionCamera.Subject = null;
+        }
     }
     private Powerup AddPowerup()
     {
@@ -260,7 +269,6 @@ public class GameManager : EntityComponent
         base.Awake();
 
         BoatPrefab = Resources.Load<GameObject>("Prefabs/Gunboat");
-        ProjectilePrefab = Resources.Load<GameObject>("Prefabs/Projectile");
         PowerupPrefab = Resources.Load<GameObject>("Prefabs/Powerup Crate");
         actionCamera = Camera.main.GetComponent<ActionCamera>();
 
@@ -295,6 +303,12 @@ public class GameManager : EntityComponent
             {
                 AddBoat(type);
             }
+        }
+
+        // When the user presses the spacebar, switch the camera subject.
+        if(Input.GetKeyDown(KeyCode.Space)) {
+            int index = (Boats.IndexOf(actionCamera.Subject) + 1) % Boats.Count;
+            actionCamera.Subject = Boats[index];
         }
     }
 }

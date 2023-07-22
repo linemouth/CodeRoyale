@@ -10,7 +10,8 @@ public class ActionCamera : MonoBehaviour
     public Boat Subject { get; set; }
     [Range(0, 1)]
     public float focus = 0.5f; // 0 = focus on the turret, 1 = focus on the hull 
-
+    [Range(0.1f, 10)]
+    public float snappiness = 1;
     private Vector3 targetPosition;
     private Quaternion targetRotation;
 
@@ -32,7 +33,7 @@ public class ActionCamera : MonoBehaviour
         }
 
         // Smoothly move to the target orientation.
-        transform.position = Vector3.Lerp(transform.position, targetPosition, Time.fixedDeltaTime);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime);
+        transform.position = Vector3.Lerp(transform.position, targetPosition, Time.fixedDeltaTime * snappiness);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * snappiness);
     }
 }

@@ -16,8 +16,7 @@ public class ProBoat : BoatController
         Repair
     }
     protected Priority priority = Priority.Hunt;
-    protected HashSet<TargetInformation> targets = new HashSet<TargetInformation>();
-
+    
     public override void OnRadarHit(TargetInformation target)
     {
         if ((Faction == null || target.Faction != Faction)
@@ -64,7 +63,7 @@ public class ProBoat : BoatController
                     // Then get the closest one
                     .FirstOrDefault();
 
-                if (target.IsValid)
+                if (target?.IsValid ?? false)
                 {
                     // Aim at the target.
                     float gunAzimuth = DirectionToAzimuth(target.EstimatedPosition - Position);
@@ -100,6 +99,6 @@ public class ProBoat : BoatController
     public override void Update1()
     {
         // Clear stale target information.
-        targets = targets.Where(target => target.Age < 1.5f).ToHashSet();
+        targets.RemoveWhere(target => target.Age > 1.5f);
     }
 }

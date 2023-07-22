@@ -1,11 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Utils;
 
 public class SpinBoat : BoatController
 {
-    private HashSet<TargetInformation> targets = new HashSet<TargetInformation>();
-
     public override void OnRadarHit(TargetInformation target)
     {
         if(Faction == null || target.Faction != Faction)
@@ -23,25 +22,31 @@ public class SpinBoat : BoatController
     }
     public override void Start()
     {
-        SetRadarAzimuth(0);
-        SetGunAzimuth(0);
+        SetRadarAzimuth(30);
+        SetGunAzimuth(30);
         SetThrust(1, 0);
         SetRudder(1);
     }
     public override void Update()
     {
+        // Sweep radar.
+        SetRadarAzimuth(30 + 10 * (float)Math.Sin(Time.timeAsDouble * 10));
+
+        // Shoot at convenient targets.
         foreach(var target in targets)
         {
-            if(target.Age > 1)
+            Vector2 relativePosition = target.EstimatedPosition - GunPosition;
+            float targetHeading = DirectionToHeading(relativePosition);
+            float gunAimError = Mathf.Abs(targetHeading - GunHeading);
+
+            if(target.Type == "Boat" && relativePosition.magnitude < 100 && gunAimError < 10)
             {
-                targets.Remove(target);
-                break;
+                Fire(200);
+                FireShotgun(15);
             }
-            float targetHeading = DirectionToHeading(target.EstimatedPosition - GunPosition);
-            float gunAimError = targetHeading - GunHeading;
-            if(Mathf.Abs(gunAimError) < 0.5f)
+            else if(gunAimError < 0.5f)
             {
-                if(target.Name == "Health Powerup" && Energy > 15)
+                if(target.Name == "Health Powerup" && Health < 15 && Energy > 10)
                 {
                     Fire(5);
                     break;
@@ -58,5 +63,9 @@ public class SpinBoat : BoatController
                 }
             }
         }
+    }
+    public override void Update1()
+    {
+        targets.RemoveWhere(target => target.Age > 1);
     }
 }

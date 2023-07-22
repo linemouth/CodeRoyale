@@ -5,8 +5,6 @@ using Utils;
 
 public class CornerBoat : BoatController
 {
-    private HashSet<TargetInformation> targets = new HashSet<TargetInformation>();
-
     public override void OnRadarHit(TargetInformation target)
     {
         if(Faction == null || target.Faction != Faction)

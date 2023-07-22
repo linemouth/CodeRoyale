@@ -41,7 +41,6 @@ public class AiBoat : BoatController
     public NeuralNet missionProcessor = new NeuralNet(new int[] { 11, 20, 20, 9 });
     public float fitness = 0;
 
-    private HashSet<TargetInformation> targets = new HashSet<TargetInformation>();
     private List<float> targetInputs = Enumerable.Repeat<float>(0, 5).ToList();
     private List<float> missionInputs = Enumerable.Repeat<float>(0, 11).ToList();
     private List<(int index, float priority)> targetRanks = new List<(int index, float distance)>(3);
@@ -84,9 +83,9 @@ public class AiBoat : BoatController
         TargetInformation boatTarget = sortedTargets.FirstOrDefault(target => target.Type == "Boat");
         TargetInformation energyTarget = sortedTargets.FirstOrDefault(target => target.Name == "Energy Powerup");
         TargetInformation healthTarget = sortedTargets.FirstOrDefault(target => target.Name == "Health Powerup");
-        targetInputs[0] = boatTarget.IsValid ? (boatTarget.Position - Position).magnitude : float.PositiveInfinity;
-        targetInputs[1] = energyTarget.IsValid ? (energyTarget.Position - Position).magnitude : float.PositiveInfinity;
-        targetInputs[2] = healthTarget.IsValid ? (healthTarget.Position - Position).magnitude : float.PositiveInfinity;
+        targetInputs[0] = boatTarget?.IsValid ?? false ? (boatTarget.Position - Position).magnitude : float.PositiveInfinity;
+        targetInputs[1] = energyTarget?.IsValid ?? false ? (energyTarget.Position - Position).magnitude : float.PositiveInfinity;
+        targetInputs[2] = healthTarget?.IsValid ?? false ? (healthTarget.Position - Position).magnitude : float.PositiveInfinity;
         targetInputs[3] = EnergyFraction;
         targetInputs[4] = HealthFraction;
 
@@ -98,16 +97,17 @@ public class AiBoat : BoatController
             (targetOutputs[1], energyTarget),
             (targetOutputs[2], healthTarget)
         }.OrderBy(entry => entry.priority).ToList();
-        TargetInformation target = rankedTargets.FirstOrDefault(entry => entry.target.IsValid).target;
+        return; // The function is currently breaking here.
+        TargetInformation currentTarget = rankedTargets.FirstOrDefault(entry => entry.target?.IsValid ?? false).target;
 
         // Initialize mission processor inputs.
-        if(target.IsValid)
+        if(!currentTarget?.IsValid ?? true)
         {
-            missionInputs[0] = target.Type == "Boat" ? 1 : 0;
-            missionInputs[1] = target.Name == "Energy Powerup" ? 1 : 0;
-            missionInputs[2] = target.Name == "Health Powerup" ? 1 : 0;
-            Vector3 relativePosition = target.Position - Position;
-            Vector3 relativeVelocity = target.Velocity - Velocity;
+            missionInputs[0] = currentTarget.Type == "Boat" ? 1 : 0;
+            missionInputs[1] = currentTarget.Name == "Energy Powerup" ? 1 : 0;
+            missionInputs[2] = currentTarget.Name == "Health Powerup" ? 1 : 0;
+            Vector3 relativePosition = currentTarget.Position - Position;
+            Vector3 relativeVelocity = currentTarget.Velocity - Velocity;
             // Todo: transform relative vectors into local rotation frame.
             missionInputs[3] = relativePosition.x;
             missionInputs[4] = relativePosition.y;

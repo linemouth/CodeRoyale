@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using Utils;
+using Utils.Unity;
 using Math = Utils.Math;
 using Color = UnityEngine.Color;
 
@@ -43,9 +44,7 @@ public class Boat : EntityComponent
     public float GunAzimuth => Mathf.Repeat(turret.localRotation.eulerAngles.y + 180, 360) - 180;
     public float GunHeading => BoatController.DirectionToHeading(new Vector2(turret.forward.x, turret.forward.z));
     public Vector2 GunForward => Geometry.ToPlanarPoint(turret.forward, GameManager.basisVectors).normalized;
-    //public float GunElevation => turret.rotation.eulerAngles.x;
     public float gunAzimuth = 0;
-    //public float gunElevation = 0;
 
     // Radar
     public Vector2 RadarPosition => Geometry.ToPlanarPoint(radar.position, GameManager.basisVectors);
@@ -57,6 +56,8 @@ public class Boat : EntityComponent
     public const float radarAzimuthSmoothTime = 0.05f;
 
     // Internal
+    private static GameObject ProjectilePrefab;
+    private static GameObject ShotgunProjectilePrefab;
     private double nextUpdate1 = 0;
     private StatBar energyBar;
     private BoatController controller = null; // The custom class used to control the Boat's behavior.
@@ -70,8 +71,8 @@ public class Boat : EntityComponent
     private const float maxReverseThrust = 20000; // N
     private const float maxLateralThrust = 10000; // N
     private float gunAzimuthVelocity = 0;
-    //private float gunElevationVelocity = 0;
     private double nextFireTime = 0;
+    private double nextShotgunFireTime = 0;
     private float radarAzimuth = 0;
     private bool radarRelative = false;
     private float radarAngularVelocity = 0;
@@ -90,16 +91,31 @@ public class Boat : EntityComponent
     public void SetThrust(float forward, float right) => thrust = new Vector2(right, forward);
     public void SetGunAzimuth(float azimuth)
     {
-        gunAzimuth = Mathf.Clamp(azimuth, -140, 140);
+        gunAzimuth = Mathf.Clamp(azimuth, -120, 120);
     }
-    //public void SetGunElevation(float angle) => gunElevation = Mathf.Clamp(angle, -10, 45);
     public bool Fire(float energy)
     {
         energy = Mathf.Clamp(energy, 0.1f, 5);
         if(Time.timeAsDouble >= nextFireTime && this.energy.Take(energy))
         {
             // Shoot a bullet
-            GameObject go = Instantiate(GameManager.ProjectilePrefab);
+            GameObject go = Instantiate(ProjectilePrefab);
+            Projectile projectile = go.GetComponent<Projectile>();
+            projectile.Initialize(this, energy, muzzle.position, muzzle.forward, Vector3.zero);// rigidbody.velocity);
+            nextFireTime = Time.timeAsDouble + 0.5 * Mathf.Sqrt(energy);
+            GameManager.RecordShot(this, energy);
+            return true;
+        }
+        return false;
+    }
+    public bool FireShotgun(int fragmentCount)
+    {
+        fragmentCount = Mathf.Clamp(fragmentCount, 5, 15);
+        float energy = fragmentCount;
+        if(Time.timeAsDouble >= nextShotgunFireTime && this.energy.Take(energy))
+        {
+            // Shoot a bullet
+            GameObject go = Instantiate(ShotgunProjectilePrefab);
             Projectile projectile = go.GetComponent<Projectile>();
             projectile.Initialize(this, energy, muzzle.position, muzzle.forward, Vector3.zero);// rigidbody.velocity);
             nextFireTime = Time.timeAsDouble + 0.5 * Mathf.Sqrt(energy);
@@ -141,6 +157,14 @@ public class Boat : EntityComponent
     {
         base.Awake();
 
+        // Static initializations
+        if(ProjectilePrefab == null)
+        {
+            ProjectilePrefab = Resources.Load<GameObject>("Prefabs/Projectile");
+            ShotgunProjectilePrefab = Resources.Load<GameObject>("Prefabs/Shotgun Projectile");
+        }
+
+        // Instance initializations
         Transform hull = transform.Find("Hull");
         turret = transform.Find("Hull/Gimbal/Turret");
         barrel = transform.Find("Hull/Gimbal/Turret/Barrel");
@@ -152,6 +176,7 @@ public class Boat : EntityComponent
         rigidbody.drag = 5;
         rigidbody.angularDrag = 5;
         rigidbody.mass = 1000;
+        rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         StatBlock.Add(new StatBar(() => (float)energy.Fraction, new Color(0, 0.5f, 1), Color.black, new Vector2(50, 2), "Energy"));
         StatBlock.Add(new StatBar(() => (float)health.Fraction, new Color(0, 1, 0),    Color.black, new Vector2(50, 2), "Health"));
     }
