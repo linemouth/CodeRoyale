@@ -7,14 +7,18 @@ using Utils;
 using Utils.Unity;
 using Math = Utils.Math;
 using Color = UnityEngine.Color;
+using UnityEngine.Assertions;
+using Unity.VisualScripting;
 
 public class GameManager : EntityComponent
 {
-    public class BoatControllerStats
+    [Serializable]
+    public class BoatControllerInfo
     {
         public string Name => Type.Name;
         public readonly Type Type;
         public StatGroup statGroup;
+        public bool allowSpawn;
         public int totalKills;
         public int totalDeaths;
         public int totalPowerupsKilled;
@@ -25,7 +29,7 @@ public class GameManager : EntityComponent
         public float totalDamageDealtToBoats;
         public float totalDamageDealtToPowerups;
         public float totalDistanceTravelled;
-        public float AverageKills => totalKills / (totalDeaths + 1);
+        public float AverageKills => (float)totalKills / (totalDeaths + 1);
         public float AveragePowerupsKilled => totalPowerupsKilled / (totalDeaths + 1);
         public float AveragePowerupsCollected => totalPowerupsCollected / (totalDeaths + 1);
         public float AverageShotEnergy => Math.SafeDivide(totalShotEnergy, totalShots, totalShotEnergy);
@@ -35,11 +39,13 @@ public class GameManager : EntityComponent
         public float AverageDamageDealthToPowerups => totalDamageDealtToPowerups / (totalDeaths + 1);
         public float AverageDistanceTravelled => totalDistanceTravelled / (totalDeaths + 1);
 
-        public BoatControllerStats(Type type) => Type = type;
+        public BoatControllerInfo(Type type) => Type = type;
+        public BoatController ConstructInstance() => (BoatController)Activator.CreateInstance(Type);
     }
     public static GameObject BoatPrefab;
     public static GameObject PowerupPrefab;
-    public static readonly Dictionary<Type, BoatControllerStats> BoatControllers = Assembly.GetExecutingAssembly().GetTypes().Where(type => type.IsSubclassOf(typeof(BoatController))).ToDictionary(type => type, type => new BoatControllerStats(type));
+    public static IEnumerable<BoatControllerInfo> SpawnableBoatControllers => boatControllers.Where(info => true || info.allowSpawn);
+    public static readonly BoatControllerInfo[] boatControllers = Assembly.GetExecutingAssembly().GetTypes().Where(type => type.IsSubclassOf(typeof(BoatController))).Select(type => new BoatControllerInfo(type)).ToArray();
     public static readonly BasisVectors basisVectors = new BasisVectors(Vector3.up, Vector3.right, Vector3.forward);
 
     private static List<Boat> Boats = new List<Boat>();
@@ -51,11 +57,11 @@ public class GameManager : EntityComponent
 
     public static IEnumerable<TargetInformation> GetRadarPings(Boat boat, float headingMin, float headingMax)
     {
-        headingMin -= 3;
-        headingMax += 3;
+        headingMin = Math.Repeat(headingMin - 3, 360);
+        headingMax = Math.Repeat(headingMax + 3, 360);
         Debug.DrawLine(boat.radar.position, boat.radar.position + Geometry.FromPlanarPoint(BoatController.HeadingToDirection(headingMin) * boat.RadarRange, basisVectors), new Color(0, 1, 0, 0.2f));
         Debug.DrawLine(boat.radar.position, boat.radar.position + Geometry.FromPlanarPoint(BoatController.HeadingToDirection(headingMax) * boat.RadarRange, basisVectors), new Color(0, 1, 0, 0.2f));
-        HashSet <TargetInformation> hits = new HashSet<TargetInformation>();
+        HashSet<TargetInformation> hits = new HashSet<TargetInformation>();
         float sqrRange = boat.RadarRange * boat.RadarRange;
         Vector2 radarPosition = boat.RadarPosition;
 
@@ -64,16 +70,8 @@ public class GameManager : EntityComponent
         {
             if(otherBoat != boat)
             {
-                Vector2 relativePosition = otherBoat.Position - radarPosition;
-                if(relativePosition.sqrMagnitude <= sqrRange)
-                {
-                    float angle = BoatController.DirectionToHeading(relativePosition);
-                    if((headingMax > headingMin) ? (angle <= headingMax && angle >= headingMin) : (angle <= headingMax || angle >= headingMin))
-                    {
-
-                        hits.Add(new TargetInformation(otherBoat));
-                        Debug.DrawLine(boat.transform.position, otherBoat.transform.position, new Color(1, 0, 0, 0.2f));
-                    }
+                if(IsInRadarSlice(otherBoat.Position - radarPosition, headingMin, headingMax, sqrRange)) {
+                    hits.Add(new TargetInformation(otherBoat));
                 }
             }
         }
@@ -81,37 +79,11 @@ public class GameManager : EntityComponent
         // Check for powerups.
         foreach(Powerup powerup in powerups)
         {
-            Vector2 relativePosition = powerup.Position - radarPosition;
-            if(relativePosition.sqrMagnitude <= sqrRange)
+            if(IsInRadarSlice(powerup.Position - radarPosition, headingMin, headingMax, sqrRange))
             {
-                float angle = BoatController.DirectionToHeading(relativePosition);
-                if((headingMax > headingMin) ? (angle <= headingMax && angle >= headingMin) : (angle <= headingMax || angle >= headingMin))
-                {
-
-                    hits.Add(new TargetInformation(powerup));
-                    Debug.DrawLine(boat.transform.position, powerup.transform.position, new Color(1, 1, 0, 0.2f));
-                }
+                hits.Add(new TargetInformation(powerup));
             }
         }
-
-        // Check for obstacles.
-        /*foreach(Boat otherBoat in Boats)
-        {
-            if(otherBoat != boat)
-            {
-                Vector2 relativePosition = otherBoat.Position - radarPosition;
-                if(relativePosition.sqrMagnitude <= sqrRange)
-                {
-                    float angle = BoatController.DirectionToHeading(relativePosition);
-                    if((headingMax > headingMin) ? (angle <= headingMax && angle >= headingMin) : (angle <= headingMax || angle >= headingMin))
-                    {
-
-                        hits.Add(new TargetInformation(otherBoat));
-                        Debug.DrawLine(boat.transform.position, otherBoat.transform.position, Color.red);
-                    }
-                }
-            }
-        }*/
 
         return hits;
     }
@@ -119,37 +91,37 @@ public class GameManager : EntityComponent
     {
         if(boat?.Controller != null && distance > 0)
         {
-            BoatControllerStats stats = BoatControllers[boat.Controller.GetType()];
-            stats.totalDistanceTravelled += distance;
+            BoatControllerInfo info = GetInfo(boat);
+            info.totalDistanceTravelled += distance;
         }
     }
     public static void RecordShot(Boat boat, float energy)
     {
         if(boat?.Controller != null)
         {
-            BoatControllerStats stats = BoatControllers[boat.Controller.GetType()];
-            stats.totalShots++;
-            stats.totalShotEnergy += energy;
+            BoatControllerInfo info = GetInfo(boat);
+            info.totalShots++;
+            info.totalShotEnergy += energy;
         }
     }
     public static void RecordHitBoat(Boat boat, Boat target, float energy, bool killed)
     {
         if(boat?.Controller != null && target != null)
         {
-            BoatControllerStats stats = BoatControllers[boat.Controller.GetType()];
-            stats.totalDamageDealtToBoats += energy;
+            BoatControllerInfo info = GetInfo(boat);
+            info.totalDamageDealtToBoats += energy;
             if(killed)
             {
-                stats.totalKills++;
+                info.totalKills++;
             }
 
             if(target.Controller != null)
             {
-                BoatControllerStats targetStats = BoatControllers[target.Controller.GetType()];
-                targetStats.totalDamageSustained += energy;
+                BoatControllerInfo victim = GetInfo(target);
+                victim.totalDamageSustained += energy;
                 if(killed)
                 {
-                    targetStats.totalDeaths++;
+                    victim.totalDeaths++;
                 }
             }
         }
@@ -158,11 +130,11 @@ public class GameManager : EntityComponent
     {
         if(boat?.Controller != null && powerup != null)
         {
-            BoatControllerStats stats = BoatControllers[boat.Controller.GetType()];
-            stats.totalDamageDealtToPowerups += energy;
+            BoatControllerInfo info = GetInfo(boat);
+            info.totalDamageDealtToPowerups += energy;
             if(collected)
             {
-                stats.totalPowerupsKilled++;
+                info.totalPowerupsKilled++;
             }
         }
     }
@@ -170,10 +142,12 @@ public class GameManager : EntityComponent
     {
         if(boat?.Controller != null && powerup != null)
         {
-            BoatControllerStats stats = BoatControllers[boat.Controller.GetType()];
-            stats.totalPowerupsCollected++;
+            BoatControllerInfo info = GetInfo(boat);
+            info.totalPowerupsCollected++;
         }
     }
+    public static BoatControllerInfo GetInfo(Boat boat) => GetInfo(boat.Controller);
+    public static BoatControllerInfo GetInfo(BoatController controller) => boatControllers.First(info => info.Type == controller.GetType());
 
     private static HashSet<Bounds> GetGridCells()
     {
@@ -215,7 +189,20 @@ public class GameManager : EntityComponent
         position.z += Math.Random(-spawnRange, spawnRange);
         return position;
     }
-    private Boat AddBoat(Type type)
+    private static bool IsInRadarSlice(Vector2 relativePosition, float minHeading, float maxHeading, float sqrRange)
+    {
+        float heading = BoatController.DirectionToHeading(relativePosition);
+        Assert.IsTrue(heading >= 0 && heading <= 360, $"Heading of {heading} is outside of [0, 360] range.");
+        if(maxHeading >= minHeading)
+        {
+            return heading <= maxHeading && heading >= minHeading && relativePosition.sqrMagnitude <= sqrRange;
+        }
+        else
+        {
+            return (heading <= maxHeading || heading >= minHeading) && relativePosition.sqrMagnitude <= sqrRange;
+        }
+    }
+    private Boat AddBoat(BoatController controller)
     {
         Vector3 position = GetSpawnPosition(8);
         GameObject boatObject = Instantiate(BoatPrefab, position, Quaternion.Euler(0, Math.Random(0, 360), 0));
@@ -224,7 +211,7 @@ public class GameManager : EntityComponent
         {
             boat = boatObject.AddComponent<Boat>();
         }
-        boat.Controller = (BoatController)Activator.CreateInstance(type);
+        boat.Controller = controller;
         if(boat.Controller is PlayerBoat playerBoat)
         {
             playerBoat.controller = inputManager.GetController();
@@ -232,7 +219,7 @@ public class GameManager : EntityComponent
             renderer.sharedMaterial = new Material(renderer.material);
             renderer.sharedMaterial.color = playerBoat.controller.color;
         }
-        boat.Destroyed += BoatDestroyed;
+        boat.Killed += BoatKilled;
         Boats.Add(boat);
 
         // If the camera doesn't have a subject, make this boat the subject.
@@ -243,7 +230,7 @@ public class GameManager : EntityComponent
 
         return boat;
     }
-    private void BoatDestroyed(Boat boat)
+    private void BoatKilled(Boat boat)
     {
         Boats.Remove(boat);
 
@@ -255,7 +242,7 @@ public class GameManager : EntityComponent
     }
     private Powerup AddPowerup()
     {
-        string type = new string[] { "Health", "Energy", "Energy", "Energy" }.Random();
+        string type = Powerup.Types.Random();
         Vector3 position = GetSpawnPosition(12);
         return AddPowerup(type, position);
     }
@@ -279,24 +266,18 @@ public class GameManager : EntityComponent
         BoatPrefab = Resources.Load<GameObject>("Prefabs/Gunboat");
         PowerupPrefab = Resources.Load<GameObject>("Prefabs/Powerup Crate");
         actionCamera = Camera.main.GetComponent<ActionCamera>();
-        inputManager = gameObject.GetOrAddComponent<InputManager>();
+		inputManager = gameObject.GetOrAddComponent<InputManager>();
 
-        /*foreach((Type type, BoatControllerStats stats) in BoatControllers)
+        foreach(BoatControllerInfo info in SpawnableBoatControllers)
         {
-            AddBoat(type);
-            StatGroup statGroup = stats.statGroup = new StatGroup(stats.Name);
+            AddBoat(info.ConstructInstance());
+            StatGroup statGroup = info.statGroup = new StatGroup(info.Name);
             statGroup.Add(new StatDivider());
-            statGroup.Add(new StatLabel(() => stats.Name, "Name"));
-            statGroup.Add(new StatLabel(() => $"Kills: {stats.totalKills:0}, Deaths: {stats.totalDeaths:0}", "Kills/Deaths"));
-            statGroup.Add(new StatLabel(() => $"Damage dealt: {stats.totalDamageDealtToBoats:0}, taken: {stats.totalDamageSustained:0}", "Damage"));
-            statGroup.Add(new StatLabel(() => $"Shots/kill: {stats.AverageShotsPerKill:0.0}, powerups: {stats.AveragePowerupsCollected:0.0}", "Effectiveness"));
-            StatBlock.Add(statGroup);
-        }*/
-    }
-    protected virtual void Start()
-    {
-        //StatBlock.Canvas = ScreenUI.Canvas;
-        //StatBlock.transform.parent = ScreenUI.LeftSidebar.transform;
+            statGroup.Add(new StatLabel(() => info.Name, "Name"));
+            statGroup.Add(new StatLabel(() => $"Kills: {info.totalKills:0}, Deaths: {info.totalDeaths:0} ({info.AverageKills:F2}:1)", "Kills/Deaths"));
+            statGroup.Add(new StatLabel(() => $"Damage dealt: {info.totalDamageDealtToBoats:0} ({info.AverageDamageDealtToBoats:F1}), taken: {info.totalDamageSustained:0} ({info.AverageDamageSustained:F1})", "Damage"));
+            ScreenUI.LeftSidebar.Add(statGroup);
+        }
     }
     protected virtual void Update()
     {
@@ -305,12 +286,13 @@ public class GameManager : EntityComponent
             AddPowerup();
         }
 
-        foreach((Type type, BoatControllerStats stat) in BoatControllers)
+        foreach(BoatControllerInfo info in SpawnableBoatControllers)
         {
-            int count = Boats.Count(boat => boat.Controller.GetType() == type);
+            int count = Boats.Count(boat => boat.Controller.GetType() == info.Type);
             if(count < 1)
             {
-                AddBoat(type);
+                BoatController controller = info.ConstructInstance();
+                AddBoat(controller);
             }
         }
 

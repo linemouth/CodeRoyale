@@ -35,30 +35,36 @@ public class SpinBoat : BoatController
         // Shoot at convenient targets.
         foreach(var target in targets)
         {
-            Vector2 relativePosition = target.EstimatedPosition - GunPosition;
-            float targetHeading = DirectionToHeading(relativePosition);
-            float gunAimError = Mathf.Abs(targetHeading - GunHeading);
-
-            if(target.Type == "Boat" && relativePosition.magnitude < 100 && gunAimError < 10)
-            {
-                Fire(200);
-                FireShotgun(15);
-            }
-            else if(gunAimError < 0.5f)
-            {
+            float distance = (target.EstimatedPosition - GunPosition).magnitude;
+            float interceptTime = distance / Projectile.muzzleVelocity;
+            Vector2 relativeInterceptPosition = target.EstimatedPosition - GunPosition + (target.Velocity - Velocity) * interceptTime;
+            float targetHeading = DirectionToHeading(relativeInterceptPosition);
+            float gunAimError = Math.Abs(GunHeading - targetHeading);
+            float gunAimMargin = (float)Math.RadToDeg * Math.Atan(2 / distance);
+            
+            if(gunAimError < gunAimMargin) {
+                if(target.Type == "Boat")
+                {
+                    if(relativeInterceptPosition.magnitude < 100 && Energy >= 15)
+                    {
+                        FireShotgun(15);
+                        Fire(Energy);
+                    }
+                    else
+                    {
+                        FireShotgun(5);
+                        Fire(Energy);
+                    }
+                    break;
+                }
                 if(target.Name == "Health Powerup" && Health < 15 && Energy > 10)
                 {
                     Fire(5);
                     break;
                 }
-                else if(target.Name == "Energy Powerup" && Energy < 20)
+                if(target.Name == "Energy Powerup" && Energy < 20)
                 {
                     Fire(5);
-                    break;
-                }
-                else if(target.Type == "Boat" && Energy > 10)
-                {
-                    Fire(Energy * 0.25f);
                     break;
                 }
             }
@@ -66,6 +72,6 @@ public class SpinBoat : BoatController
     }
     public override void Update1()
     {
-        targets.RemoveWhere(target => target.Age > 1);
+        PurgeTargets(target => target.Age > 1);
     }
 }

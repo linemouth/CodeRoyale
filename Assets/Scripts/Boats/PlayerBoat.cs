@@ -3,12 +3,26 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using Color = UnityEngine.Color;
 using Utils;
+using Utils.Unity;
 
 public class PlayerBoat : BoatController
 {
+    public override Color HullColor
+    {
+        get
+        {
+            Hsl hsl = WheelhouseColor.ToHsl();
+            hsl.s *= 0.75f;
+            hsl.l *= 0.75f;
+            return hsl.ToUnityColor();
+        }
+    }
+    public override Color GunColor => WheelhouseColor;
+    public override Color WheelhouseColor => controller?.color ?? Color.red;
+    public override Color EngineColor => WheelhouseColor;
     public VirtualController controller;
-    public UnityEngine.Color Color => controller.color;
 
     protected float gunTargetAzimuth = 0;
     
@@ -48,7 +62,7 @@ public class PlayerBoat : BoatController
             FireShotgun(5);
         }
     }
-    public override void OnDestroy()
+    public override void OnKilled(string killerName)
     {
         // Return the controller to the InputManager.
         controller.checkedOut = false;

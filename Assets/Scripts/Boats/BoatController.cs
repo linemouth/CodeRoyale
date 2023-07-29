@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +23,12 @@ public abstract class BoatController
     public float Energy => (float)Boat.energy.Stored;
     /// <summary>The current fractional energy of the Boat from [0, 1].</summary>
     public float EnergyFraction => (float)Boat.energy.Fraction;
+
+    // Customization
+    public virtual Color HullColor => Color.white;
+    public virtual Color EngineColor => Color.gray;
+    public virtual Color WheelhouseColor => Color.gray;
+    public virtual Color GunColor => Color.gray;
 
     // Hull
     /// <summary>The position of the Boat in world coordinates.</summary>
@@ -57,6 +64,17 @@ public abstract class BoatController
     public float RadarRange => Boat.RadarRange;
     /// <summary>A collection in which to store targets from OnRadarHit(). Note: This is unmanaged! YOU must write the code to use it.</summary>
     public readonly HashSet<TargetInformation> targets = new HashSet<TargetInformation>();
+    /// <summary>Invalidates and removes all targets which meet some criterion.</summary>
+    /// <param name="predicate"></param>
+    public void PurgeTargets(Func<TargetInformation, bool> predicate)
+    {
+        TargetInformation[] purged = targets.Where(predicate).ToArray();
+        foreach (TargetInformation target in purged)
+        {
+            target.Invalidate();
+            targets.Remove(target);
+        }
+    }
 
     // Helper functions: These can be helpful for doing harder math.
     /// <summary>Converts a Vector2 direction to a heading in degrees.</summary>
@@ -97,15 +115,18 @@ public abstract class BoatController
     public virtual void Update1() { }
     /// <summary>Called every Physics loop update.</summary>
     public virtual void FixedUpdate() { }
-    /// <summary>Called when the boat is destroyed.</summary>
-    public virtual void OnDestroy() { }
+    /// <summary>Called when the Boat is killed.</summary>
+    public virtual void OnKilled(string killerName) { }
 
     // Control functions: Use these to control your Boat.
     /// <summary>Adds something to the Boat's stat block.</summary>
-    public void AddStat(IStat stat) => Boat.StatBlock.Add(stat);
-    /// <summary>Sets the heading to which the Boat will turn.</summary>
+    public T AddStat<T>(T stat) where T : IStat
+    {
+        return Boat.UI.Add(stat);
+    }
+    /// <summary>Sets the heading (in degrees) to which the Boat will turn, relative to the world.</summary>
     public void SetHeading(float heading) => Boat.SetHeading(heading);
-    /// <summary>Sets the rate at which the Boat will turn.</summary>
+    /// <summary>Sets the rate at which the Boat will turn in a fractional range from -1 (left) to 1 (right).</summary>
     public void SetRudder(float position) => Boat.SetRudder(position);
     /// <summary>Sets the forward thrust to a fractional amount from -1 to 1.</summary>
     public void SetThrust(float amount) => SetThrust(amount, 0);
@@ -118,11 +139,11 @@ public abstract class BoatController
     public bool Fire(float energy) => Boat.Fire(energy);
     /// <summary>Attempts to fire a spread of bullets. The impact damage and cooldown are both proportional to the number of fragments requested.</summary>
     public bool FireShotgun(int fragmentCount) => Boat.FireShotgun(fragmentCount);
-    /// <summary>Sets the rate at which the radar will turn.</summary>
-    public void SetRadarRotationSpeed(float rpm) => Boat.SetRadarRotationSpeed(rpm);
-    /// <summary>Sets the direction the radar will aim, relative to the Boat.</summary>
+    /// <summary>Sets the rate (in degrees per second) at which the radar will turn.</summary>
+    public void SetRadarRotationSpeed(float rotationSpeed) => Boat.SetRadarRotationSpeed(rotationSpeed);
+    /// <summary>Sets the direction (in degrees) the radar will aim, relative to the Boat.</summary>
     public void SetRadarAzimuth(float azimuth) => Boat.SetRadarAzimuth(azimuth);
-    /// <summary>Sets the direction the radar will aim, relative to the world.</summary>
+    /// <summary>Sets the direction (in degrees) the radar will aim, relative to the world.</summary>
     public void SetRadarHeading(float heading) => Boat.SetRadarHeading(heading);
     public void SelfDestruct() => Boat.SelfDestruct();
 

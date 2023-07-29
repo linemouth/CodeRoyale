@@ -28,28 +28,27 @@ public class SearchMission : Mission
     {
         this.boatController = boatController;
     }
-    public override float GetPriority() => Math.SmoothClamp((Time.time - nextSearchTime) / 10 + 0.5f);
     public override void Update()
     {
         float elapsedTime = Time.time - startTime;
         switch(range)
         {
             case Range.Short:
-                if(elapsedTime > 1.2)
+                if(elapsedTime > 1.2f)
                 {
-                    nextSearchTime = Time.time + 10;
+                    nextSearchTime = Time.time + 5;
                     SetRange(Range.Medium);
                 }
                 break;
             case Range.Medium:
-                if(elapsedTime > 4.2)
+                if(elapsedTime > 3.2f)
                 {
-                    nextSearchTime = Time.time + 20;
+                    nextSearchTime = Time.time + 10;
                     SetRange(Range.Long);
                 }
                 break;
             case Range.Long:
-                if(elapsedTime > 12.2)
+                if(elapsedTime > 9.2f)
                 {
                     nextSearchTime = Time.time + 20;
                     SetRange(Range.Medium);
@@ -59,7 +58,7 @@ public class SearchMission : Mission
     }
     public override void OnAcquiredPriority()
     {
-        SetRange(0);
+        SetRange(Range.Short);
         startTime = 0;
     }
     public void SetRange(Range range)
@@ -69,19 +68,28 @@ public class SearchMission : Mission
         switch(range)
         {
             case Range.Short:
-                boatController.SetRadarRotationSpeed(100000);
-                boatController.SetRudder(1000); // Spin right to increase radar speed.
+                boatController.SetRadarRotationSpeed(360);
+                boatController.SetGunAzimuth(0);
                 break;
             case Range.Medium:
-                boatController.SetRadarRotationSpeed(100000);
-                boatController.SetRudder(1000); // Spin right to increase radar speed.
+                boatController.SetRadarRotationSpeed(120);
+                boatController.SetRudder(0);
+                boatController.SetThrust(0);
+                boatController.SetGunAzimuth(0);
                 break;
             case Range.Long:
-                boatController.SetRadarRotationSpeed(100000);
-                boatController.SetRudder(1000); // Spin right to increase radar speed.
+                boatController.SetRadarRotationSpeed(40);
+                boatController.SetRudder(0);
+                boatController.SetThrust(0);
+                boatController.SetGunAzimuth(0);
                 break;
         }
-        boatController.SetGunAzimuth(0);
-        boatController.SetThrust(0);
+    }
+
+    protected override float CalculatePriority()
+    {
+        float urge = Math.SmoothClamp((Time.time - nextSearchTime) / 10 + 0.5f);
+        float loneliness = boatController.targets.Count(target => target.Type == "Boat") * 0.25f;
+        return urge + loneliness;
     }
 }

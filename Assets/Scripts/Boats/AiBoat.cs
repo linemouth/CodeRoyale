@@ -4,7 +4,7 @@ using UnityEngine;
 using Utils;
 using Utils.AI;
 
-public class AiBoat : BoatController
+/*public class AiBoat : BoatController
 {
     // Neural network to select a target.
     // Inputs:
@@ -141,4 +141,4 @@ public class AiBoat : BoatController
         }
     }
     public AiBoat GetClone() => new AiBoat(targetSelector.Mutated(), missionProcessor.Mutated());
-}
+}*/
