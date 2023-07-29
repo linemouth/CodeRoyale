@@ -14,19 +14,14 @@ public class RepairMission : Mission
     {
         this.boatController = boatController;
     }
-    public override float GetPriority()
-    {
-        float priority = 0.75f * Math.Pow(1 - boatController.HealthFraction, 2);
-        if(currentTarget?.IsValid ?? false)
-        {
-            Vector2 searchOrigin = boatController.Position + boatController.Forward * 50;
-            float distance = (currentTarget.Position - searchOrigin).magnitude;
-            priority += Math.Remap(distance, 0, 500, 0.25f, 0);
-        }
-        return priority;
-    }
     public override void Update()
     {
+        if(currentTarget == null || !currentTarget.IsValid)
+        {
+            Abort();
+            return;
+        }
+
         Vector2 relativePosition = boatController.WorldToLocalPosition(currentTarget.Position);
         float targetAzimuth = (float)(Math.Atan2(relativePosition.x, relativePosition.y) * Math.RadToDeg);
         boatController.SetRudder(targetAzimuth);
@@ -39,6 +34,19 @@ public class RepairMission : Mission
         boatController.SetGunAzimuth(0);
     }
 
+    protected override float CalculatePriority()
+    {
+        UpdateTarget();
+
+        float priority = 0.75f * Math.Pow(1 - boatController.HealthFraction, 2);
+        if(currentTarget?.IsValid ?? false)
+        {
+            Vector2 searchOrigin = boatController.Position + boatController.Forward * 50;
+            float distance = (currentTarget.Position - searchOrigin).magnitude;
+            priority += Math.Remap(distance, 0, 500, 0.25f, 0);
+        }
+        return priority;
+    }
     protected void UpdateTarget()
     {
         Vector2 searchOrigin = boatController.Position + boatController.Forward * 50;

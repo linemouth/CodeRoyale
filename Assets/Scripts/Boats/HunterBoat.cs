@@ -5,16 +5,27 @@ using System.Linq;
 using UnityEngine;
 using Utils;
 using Utils.Unity;
+using static UnityEngine.EventSystems.EventTrigger;
 using Color = UnityEngine.Color;
 using Math = Utils.Math;
 
 public class HunterBoat : BoatController
 {
+    public override Color HullColor => new Color(0.41f, 0.34f, 0.28f);
+    public override Color GunColor => new Color(0.28f, 0.23f, 0.19f);
+    public override Color WheelhouseColor => new Color(0.19f, 0.16f, 0.13f);
+    public override Color EngineColor => new Color(0.28f, 0.23f, 0.19f);
+
     protected MissionManager missionManager;
     protected StatBar searchUrge;
     protected StatBar repairUrge;
     protected StatBar refuelUrge;
     protected StatBar huntUrge;
+
+    private Mission searchMission;
+    private Mission repairMission;
+    private Mission refuelMission;
+    private Mission huntMission;
 
     public override void OnRadarHit(TargetInformation target)
     {
@@ -35,21 +46,32 @@ public class HunterBoat : BoatController
     {
         base.Start();
 
-        var searchMission = new SearchMission(this);
-        var repairMission = new RepairMission(this);
-        var refuelMission = new RefuelMission(this);
-        var huntMission   = new HuntMission(this);
+        // Missions
+        searchMission = new SearchMission(this);
+        repairMission = new RepairMission(this);
+        refuelMission = new RefuelMission(this);
+        huntMission   = new HuntMission(this);
         missionManager    = new MissionManager() { searchMission, repairMission, refuelMission, huntMission };
+        missionManager.Update();
+
+        // Debugging status bars
         var dark = new Color(0, 0, 0, 0.3f);
-        searchUrge = new StatBar(Color.green,  dark, new Vector2(50, 2), "Search");
-        repairUrge = new StatBar(Color.yellow, dark, new Vector2(50, 2), "Repair");
-        refuelUrge = new StatBar(Color.blue,   dark, new Vector2(50, 2), "Refuel");
-        huntUrge   = new StatBar(Color.red,    dark, new Vector2(50, 2), "Hunt");
+        //searchUrge = AddStat(new StatBar(Color.green,  Color.black, new Vector2(64, 3), "Search"));
+        //repairUrge = AddStat(new StatBar(Color.yellow, Color.black, new Vector2(64, 3), "Repair"));
+        //refuelUrge = AddStat(new StatBar(Color.blue,   Color.black, new Vector2(64, 3), "Refuel"));
+        //huntUrge   = AddStat(new StatBar(Color.red,    Color.black, new Vector2(64, 3), "Hunt"));
+
+        // Connect events
+        //searchMission.PriorityChanged += value => searchUrge.Value = value;
+        //repairMission.PriorityChanged += value => repairUrge.Value = value;
+        //refuelMission.PriorityChanged += value => refuelUrge.Value = value;
+        //huntMission.PriorityChanged   += value => huntUrge.Value = value;
     }
     public override void Update()
     {
         base.Update();
-        
+
+        searchMission.UpdatePriority();
         missionManager.CurrentMission?.Update();
     }
     public override void Update1()
@@ -57,9 +79,12 @@ public class HunterBoat : BoatController
         base.Update1();
 
         // Remove stale radar ghosts.
-        targets.RemoveWhere(target => target.Age > (target.Type == "Boat" ? 3 : 5));
+        PurgeTargets(target => target.Age > (target.Type == "Boat" ? 5 : 15));
 
         // Update mission priorities.
         missionManager.Update();
+
+        // Run the current mission.
+        missionManager.CurrentMission?.Update1();
     }
 }

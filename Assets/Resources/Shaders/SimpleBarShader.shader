@@ -45,7 +45,8 @@ Shader "Unlit/SimpleBarShader"
 
             float4 frag(Interpolators i) : SV_TARGET
             {
-                //return float4(i.uv, 0, 1);
+                return float4(0.25, 0.5, 0.75, 1);
+                return float4(i.uv, 0, 1);
                 return i.uv.x < _Value ? _Color : _Background;
             }
             ENDCG

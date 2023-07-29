@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Utils;
 
-public class CornerBoat : BoatController
+/*public class CornerBoat : BoatController
 {
     public override void OnRadarHit(TargetInformation target)
     {
@@ -58,4 +58,4 @@ public class CornerBoat : BoatController
             }
         }
     }
-}
+}*/

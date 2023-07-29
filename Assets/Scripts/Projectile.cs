@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Utils;
 using Utils.Unity;
 
 public class Projectile : MonoBehaviour
@@ -18,8 +19,9 @@ public class Projectile : MonoBehaviour
         Source = source;
         Energy = energy;
         transform.position = position;
-        Vector3 velocity = direction.normalized * muzzleVelocity + relativeVelocity;
-        transform.rotation = Quaternion.LookRotation(velocity, Vector3.up);
+        transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
+        Vector3 velocity = transform.forward * muzzleVelocity + relativeVelocity;
+
         Rigidbody rb = transform.GetComponent<Rigidbody>();
         rb.velocity = velocity;
         expirationTime = Time.timeAsDouble + 10;
