@@ -103,6 +103,20 @@ public abstract class BoatController
         Vector3 worldPosition3D = Boat.transform.TransformPoint(localPosition3D);
         return new Vector2(worldPosition3D.x, worldPosition3D.z);
     }
+    /// <summary>Converts a direction relative to the Boat to direction in the world.</summary>
+    public Vector2 WorldToLocalDirection(Vector2 worldPosition)
+    {
+        Vector3 worldPosition3D = new Vector3(worldPosition.x, 0, worldPosition.y);
+        Vector3 localPosition3D = Boat.transform.InverseTransformDirection(worldPosition3D);
+        return new Vector2(localPosition3D.x, localPosition3D.z);
+    }
+    /// <summary>Converts a direction in the world to a direction relative to the Boat.</summary>
+    public Vector2 LocalToWorldDirection(Vector2 localPosition)
+    {
+        Vector3 localPosition3D = new Vector3(localPosition.x, 0, localPosition.y);
+        Vector3 worldPosition3D = Boat.transform.TransformDirection(localPosition3D);
+        return new Vector2(worldPosition3D.x, worldPosition3D.z);
+    }
 
     // Event callbacks: These functions can be overridden in your BoatController subclass.
     /// <summary>Called when the radar detects something.</summary>

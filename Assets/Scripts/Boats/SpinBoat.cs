@@ -11,12 +11,14 @@ public class SpinBoat : BoatController
         {
             if(target.Type == "Boat" || target.Type == "Powerup")
             {
-                if(targets.Contains(target))
+                if (targets.TryGetValue(target, out var oldTarget))
                 {
-                    // Update existing target;
-                    targets.Remove(target);
+                    oldTarget.Update(target);
                 }
-                targets.Add(target);
+                else
+                {
+                    targets.Add(target);
+                }
             }
         }
     }
