@@ -70,7 +70,7 @@ public class ProBoat : BoatController
                     SetGunAzimuth(gunAzimuth);
 
                     // Shoot furiously!
-                    Fire(1f);
+                    Fire(0.75f);
                 }
                 else
                 {

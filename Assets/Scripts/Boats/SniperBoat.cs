@@ -11,16 +11,14 @@ using Math = Utils.Math;
 
 public class SniperBoat : BoatController
 {
-    private float targetRadarAzimuth = 45;
     private List<TargetInformation> Victims = new List<TargetInformation>();
     private float radarDirection = 1;
-    public override Color HullColor => new Color(0.00f, 0.40f, 0.10f);
-    public override Color GunColor => new Color(0.00f, 0.80f, 0.20f);
-    public override Color WheelhouseColor => new Color(0.00f, 0.80f, 0.20f);
-    public override Color EngineColor => new Color(0.00f, 0.80f, 0.20f);
+    public override Color HullColor => new Color(0.20f, 0.20f, 0.20f);
+    public override Color GunColor => new Color(0.30f, 0.30f, 0.30f);
+    public override Color WheelhouseColor => new Color(0.50f, 0.50f, 0.50f);
+    public override Color EngineColor => new Color(0.40f, 0.40f, 0.40f);
 
     public TargetInformation target;
-    private int burstFireRound = 0;
 
     public override void OnRadarHit(TargetInformation target)
     {
@@ -57,31 +55,25 @@ public class SniperBoat : BoatController
         else
         {
             Vector2 thrustDirection = (cornerPosition - Position) / 10;
-            Vector2 thrust = WorldToLocalPosition(thrustDirection);
+            Vector2 thrust = WorldToLocalDirection(thrustDirection);
             SetThrust(thrust.y, thrust.x);
             SetHeading(directionFromOrigin - 180);
         }
 
         //Sweep radar
         float radarError = Math.Abs(RadarAzimuth - 45 * radarDirection);
-        if (radarDirection > 0)
+        if (radarDirection > 0 && RadarAzimuth > 45)
         {
-            if (RadarAzimuth > 45)
-            {
-                radarDirection = -1;
-                SetRadarRotationSpeed(-60);
-            }
-            else
-            {
-                if (RadarAzimuth > -45)
-                {
-                    radarDirection = -1;
-                    SetRadarRotationSpeed(60);
-                }
-            }
+            radarDirection = -1;
+            SetRadarRotationSpeed(-60);
+        }
+        else if (radarDirection < 0 && RadarAzimuth < -45)
+        {
+            radarDirection = 1;
+            SetRadarRotationSpeed(60);
         }
         //Select a victim.
-        List<TargetInformation> availableTargets = targets.Where(target => !Victims.Contains(target) && target.IsValid).ToList();
+        List<TargetInformation> availableTargets = targets.Where(target => !Victims.Contains(target)).Where(TargetIsValid).ToList();
         TargetInformation target = null;
         if (availableTargets.Count > 0)
         {
