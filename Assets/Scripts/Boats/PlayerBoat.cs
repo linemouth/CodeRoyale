@@ -7,7 +7,7 @@ using Color = UnityEngine.Color;
 using Utils;
 using Utils.Unity;
 
-public class PlayerBoat : BoatController
+/*public class PlayerBoat : BoatController
 {
     public override Color HullColor
     {
@@ -69,4 +69,4 @@ public class PlayerBoat : BoatController
     }
 }
 public class PlayerBoat2 : PlayerBoat { }
-public class PlayerBoat3 : PlayerBoat { }
+public class PlayerBoat3 : PlayerBoat { }*/

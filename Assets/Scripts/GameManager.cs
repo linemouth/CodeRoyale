@@ -212,13 +212,13 @@ public class GameManager : EntityComponent
             boat = boatObject.AddComponent<Boat>();
         }
         boat.Controller = controller;
-        if(boat.Controller is PlayerBoat playerBoat)
+        /*if(boat.Controller is PlayerBoat playerBoat)
         {
             playerBoat.controller = inputManager.GetController();
             MeshRenderer renderer = boat.GetComponentInChildren<MeshRenderer>();
             renderer.sharedMaterial = new Material(renderer.material);
             renderer.sharedMaterial.color = playerBoat.controller.color;
-        }
+        }*/
         boat.Killed += BoatKilled;
         Boats.Add(boat);
 
