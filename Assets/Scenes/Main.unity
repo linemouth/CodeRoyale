@@ -567,7 +567,6 @@ GameObject:
   - component: {fileID: 963194228}
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
-  - component: {fileID: 963194230}
   - component: {fileID: 963194231}
   - component: {fileID: 963194232}
   - component: {fileID: 963194233}
@@ -652,25 +651,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 34.464, y: 0, z: 0}
---- !u!114 &963194230
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 963194225}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b048d330f37e03446a892aeb9dcec8b8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  zoomSensitivity: 1
-  orbitSensitivity: 3
-  targetPosition: {x: 0, y: 0, z: 0}
-  distance: 150
-  azimuth: 0
-  orbitSpeed: 5
-  elevation: 60
 --- !u!54 &963194231
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -797,7 +777,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1152565006}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dafa2dd3cbbdf884ca525824265e3589, type: 3}
+  m_Script: {fileID: 11500000, guid: 9c404b433dee26e4380fea93a2f5993f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1226393441
@@ -841,12 +821,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 1226393441}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a6a94f318fe086c45a0ba1efd38b90fa, type: 3}
+  m_Script: {fileID: 11500000, guid: fdace8035b4b4d947a587ea8f5a90469, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   size: {x: 250, y: 250}
-  resolution: 1
-  cellCount: 250
+  resolution: 2.5
+  cellCount: 100
   material: {fileID: 2100000, guid: a496c5c67e112a84287523f6fc27b03e, type: 2}
 --- !u!1 &1397290926
 GameObject:

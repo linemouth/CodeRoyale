@@ -6,7 +6,6 @@ using Utils;
 using Utils.Unity;
 using Math = Utils.Math;
 using Color = UnityEngine.Color;
-using UnityEngine.Assertions;
 
 public class Boat : EntityComponent
 {
@@ -26,13 +25,15 @@ public class Boat : EntityComponent
 
                 // Customize the boat.
                 SetColor("Hull", Controller.HullColor);
-                SetColor("Hull/Accommodation", Controller.WheelhouseColor);
-                SetColor("Hull/Accommodation/Bridge", Controller.WheelhouseColor);
-                SetColor("Hull/Accommodation/Bridge/Radar", Controller.WheelhouseColor);
-                SetColor("Hull/Accommodation/Engine", Controller.EngineColor);
-                SetColor("Hull/Gimbal", Controller.GunColor);
-                SetColor("Hull/Gimbal/Turret", Controller.GunColor);
-                SetColor("Hull/Gimbal/Turret/Barrel", Controller.GunColor);
+                SetColor("Wave Shield", Controller.HullColor);
+                SetColor("Wheelhouse", Controller.WheelhouseColor);
+                SetColor("Wheelhouse/port door", Controller.WheelhouseColor);
+                SetColor("Wheelhouse/starboard door", Controller.WheelhouseColor);
+                SetColor("Radar", Controller.WheelhouseColor);
+                SetColor("Engine", Controller.EngineColor);
+                SetColor("Turret", Controller.GunColor);
+                SetColor("Turret/Gimbal", Controller.GunColor);
+                SetColor("Turret/Gimbal/Barrel", Controller.GunColor);
             }
         }
     }
@@ -88,6 +89,12 @@ public class Boat : EntityComponent
     private bool radarRelative = false;
     private float radarAngularVelocity = 0;
     private bool spinRadarContinuously = true;
+    private Vector3[] buoyancyPoints = new Vector3[]{
+        new Vector3( 2, 0,  6),
+        new Vector3(-2, 0,  6),
+        new Vector3( 2, 0, -6),
+        new Vector3(-2, 0, -6)
+    };
 
     public void SetHeading(float heading)
     {
@@ -192,17 +199,18 @@ public class Boat : EntityComponent
 
         // Instance initializations
         Transform hull = transform.Find("Hull");
-        turret = transform.Find("Hull/Gimbal/Turret");
-        barrel = transform.Find("Hull/Gimbal/Turret/Barrel");
-        muzzle = transform.Find("Hull/Gimbal/Turret/Barrel/Muzzle");
-        radar = transform.Find("Hull/Accommodation/Bridge/Radar");
+        turret = transform.Find("Turret/Gimbal/");
+        barrel = transform.Find("Turret/Gimbal/Barrel");
+        muzzle = transform.Find("Turret/Gimbal/Barrel/Muzzle");
+        radar = transform.Find("Radar");
         rigidbody = gameObject.GetOrAddComponent<Rigidbody>();
         rigidbody.useGravity = false;
-        rigidbody.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezeRotationX;
         rigidbody.drag = 5;
         rigidbody.angularDrag = 5;
         rigidbody.mass = 1000;
         rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        // Doesn't work
+        //rigidbody.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezeRotationX;
     }
     protected void Start()
     {
@@ -216,6 +224,14 @@ public class Boat : EntityComponent
     }
     protected void FixedUpdate()
     {
+        // Buoyancy
+        foreach(var point in buoyancyPoints)
+        {
+            Vector3 worldPoint = transform.TransformPoint(point);
+            float force = worldPoint.y * -3000f;
+            rigidbody.AddForceAtPosition(new Vector3(0, force, 0), worldPoint);
+        }
+
         // Thrust
         float forwardThrust = thrust.y * (thrust.y >= 0 ? maxForwardThrust : maxReverseThrust);
         float lateralThrust = thrust.x * maxLateralThrust;
@@ -303,7 +319,12 @@ public class Boat : EntityComponent
 
     private void SetColor(string name, Color color)
     {
-        Renderer renderer = transform.Find(name).GetComponent<Renderer>();
+        Transform t = transform.Find(name);
+        if(t == null)
+        {
+            throw new Exception($"Cannot find renderer '{name}'");
+        }
+        Renderer renderer = t.GetComponent<Renderer>();
         Material material = new Material(renderer.material);
         material.color = color;
         renderer.material = material;
